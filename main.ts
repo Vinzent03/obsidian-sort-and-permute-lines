@@ -1,14 +1,21 @@
-import { Plugin } from 'obsidian';
+import { MarkdownView, Plugin } from 'obsidian';
 
 interface sortMethod {
-	(a: string, b: string): number;
+	(x: string, y: string): number;
 }
 
 export default class MyPlugin extends Plugin {
-	cm: CodeMirror.Editor;
+	compare: sortMethod;
 	async onload() {
 		console.log('loading ' + this.manifest.name);
-		this.registerCodeMirror((cm) => this.cm = cm);
+
+		const { compare } = new Intl.Collator(undefined, {
+			usage: 'sort',
+			sensitivity: 'base',
+			numeric: true,
+			ignorePunctuation: true,
+		});
+		this.compare = compare;
 		this.addCommand({
 			id: 'sort-alphabetically',
 			name: 'Sort alphabetically',
@@ -39,53 +46,62 @@ export default class MyPlugin extends Plugin {
 
 	sortAlphabetically() {
 		const lines = this.getLines();
-		lines.sort((a, b) => this.modifyLine(a, b, (a, b) => a.localeCompare(b)));
+		if (!lines) return;
+		let sortFunc = (a: string, b: string) => this.compare(a.trim(), b.trim());
+
+		lines.sort(sortFunc);
 		this.setLines(lines);
 	}
 
 	sortLengthOfLine() {
 		const lines = this.getLines();
-		lines.sort((a, b) => this.modifyLine(a, b, (a, b) => a.length - b.length));
+		if (!lines) return;
+		lines.sort((a, b) => a.length - b.length);
 
 		this.setLines(lines);
 	}
 
 	permuteReverse() {
 		const lines = this.getLines();
+		if (!lines) return;
 		lines.reverse();
 		this.setLines(lines);
 	}
 
 	permuteShuffle() {
 		const lines = this.getLines();
+		if (!lines) return;
 		lines.shuffle();
 		this.setLines(lines);
 	}
 
+	getEditor(): CodeMirror.Editor {
+		let view = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (!view) return;
+
+		let cm = view.sourceMode.cmEditor;
+		return cm;
+	}
+
 	getLines(): string[] {
-		const selection = this.cm.getSelection();
+		let editor = this.getEditor();
+		if (!editor) return;
+		const selection = editor.getSelection();
 
 		if (selection != "") {
 			return selection.split("\n");
 		} else {
-			return this.cm.getValue().split("\n");
+			return editor.getValue().split("\n");
 		}
 	}
 
 	setLines(lines: string[]) {
-		const sel = this.cm.getSelection();
-		if (sel != "") {
-			this.cm.replaceSelection(lines.join("\n"));
+		const editor = this.getEditor();
+		const selection = editor.getSelection();
+		if (selection != "") {
+			editor.replaceSelection(lines.join("\n"));
 		} else {
-			this.cm.setValue(lines.join("\n"));
+			editor.setValue(lines.join("\n"));
 		}
-	}
-
-	modifyLine(a: string, b: string, func: sortMethod): number {
-		const reg = new RegExp("[a-zA-Z0-9]");
-		a = a.split("").filter((char) => reg.test(char)).join("");
-		b = b.split("").filter((char) => reg.test(char)).join("");
-
-		return func(a, b);
 	}
 }

@@ -25,7 +25,7 @@ Custom plugins are only available for Obsidian v0.9.7+.
 
 ### From GitHub
 1. Download the [latest release](https://github.com/Vinzent03/obsidian-sort-and-permute-lines/releases/latest)
-2. Move `manifest.json` and `main.js` to `<vault>/.obsidian/plugins/find-unlinked-files`
+2. Move `manifest.json` and `main.js` to `<vault>/.obsidian/plugins/obsidian-sort-and-permute-lines`
 3. Reload Obsidian (Str + r)
 4. Go to settings and disable safe mode
 5. Enable `Sort & Permute lines`

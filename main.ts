@@ -45,34 +45,34 @@ export default class MyPlugin extends Plugin {
 
 
 	sortAlphabetically() {
-		const lines = this.getLines();
+		const lines = this.getLines(this.getEditor());
 		if (!lines) return;
 		let sortFunc = (a: string, b: string) => this.compare(a.trim(), b.trim());
 
 		lines.sort(sortFunc);
-		this.setLines(lines);
+		this.setLines(this.getEditor(), lines);
 	}
 
 	sortLengthOfLine() {
-		const lines = this.getLines();
+		const lines = this.getLines(this.getEditor());
 		if (!lines) return;
 		lines.sort((a, b) => a.length - b.length);
 
-		this.setLines(lines);
+		this.setLines(this.getEditor(), lines);
 	}
 
 	permuteReverse() {
-		const lines = this.getLines();
+		const lines = this.getLines(this.getEditor());
 		if (!lines) return;
 		lines.reverse();
-		this.setLines(lines);
+		this.setLines(this.getEditor(), lines);
 	}
 
 	permuteShuffle() {
-		const lines = this.getLines();
+		const lines = this.getLines(this.getEditor());
 		if (!lines) return;
 		lines.shuffle();
-		this.setLines(lines);
+		this.setLines(this.getEditor(), lines);
 	}
 
 	getEditor(): CodeMirror.Editor {
@@ -83,8 +83,7 @@ export default class MyPlugin extends Plugin {
 		return cm;
 	}
 
-	getLines(): string[] {
-		let editor = this.getEditor();
+	getLines(editor: CodeMirror.Editor): string[] {
 		if (!editor) return;
 		const selection = editor.getSelection();
 
@@ -95,8 +94,7 @@ export default class MyPlugin extends Plugin {
 		}
 	}
 
-	setLines(lines: string[]) {
-		const editor = this.getEditor();
+	setLines(editor: CodeMirror.Editor, lines: string[]) {
 		const selection = editor.getSelection();
 		if (selection != "") {
 			editor.replaceSelection(lines.join("\n"));

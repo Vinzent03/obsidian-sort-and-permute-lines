@@ -9,6 +9,8 @@
 ## How to use
 You can either just call a command and the whole file will be changed, or select text and just change that range.
 
+![Demo](https://raw.githubusercontent.com/Vinzent03/obsidian-sort-and-permute-lines/master/assets/example.gif)
+
 ## Compatibility
 Custom plugins are only available for Obsidian v0.9.7+.
 

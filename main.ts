@@ -4,6 +4,11 @@ interface sortMethod {
 	(x: string, y: string): number;
 }
 
+interface MyLine {
+	source: string;
+	formatted: string;
+}
+
 export default class MyPlugin extends Plugin {
 	compare: sortMethod;
 	async onload() {
@@ -45,61 +50,81 @@ export default class MyPlugin extends Plugin {
 
 
 	sortAlphabetically() {
-		const lines = this.getLines(this.getEditor());
-		if (!lines) return;
-		let sortFunc = (a: string, b: string) => this.compare(a.trim(), b.trim());
+		const lines = this.getLines();
+		if (lines.length === 0) return;
+		let sortFunc = (a: MyLine, b: MyLine) => this.compare(a.formatted.trim(), b.formatted.trim());
 
 		lines.sort(sortFunc);
-		this.setLines(this.getEditor(), lines);
+		this.setLines(lines);
 	}
 
 	sortLengthOfLine() {
-		const lines = this.getLines(this.getEditor());
-		if (!lines) return;
-		lines.sort((a, b) => a.length - b.length);
+		const lines = this.getLines();
+		if (lines.length === 0) return;
+		lines.sort((a, b) => a.formatted.length - b.formatted.length);
 
-		this.setLines(this.getEditor(), lines);
+		this.setLines(lines);
 	}
 
 	permuteReverse() {
-		const lines = this.getLines(this.getEditor());
-		if (!lines) return;
+		const lines = this.getLines();
+		if (lines.length === 0) return;
 		lines.reverse();
-		this.setLines(this.getEditor(), lines);
+		this.setLines(lines);
 	}
 
 	permuteShuffle() {
-		const lines = this.getLines(this.getEditor());
-		if (!lines) return;
+		const lines = this.getLines();
+		if (lines.length === 0) return;
 		lines.shuffle();
-		this.setLines(this.getEditor(), lines);
+		this.setLines(lines);
 	}
 
-	getEditor(): CodeMirror.Editor {
-		let view = this.app.workspace.getActiveViewOfType(MarkdownView);
-		if (!view) return;
-
-		let cm = view.sourceMode.cmEditor;
-		return cm;
-	}
-
-	getLines(editor: CodeMirror.Editor): string[] {
+	getLines(): MyLine[] {
+		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+		const editor = view.sourceMode.cmEditor;
 		if (!editor) return;
-		const selection = editor.getSelection();
+		const file = view.file;
+		let lines = editor.getValue().split("\n");
 
-		if (selection != "") {
-			return selection.split("\n");
-		} else {
-			return editor.getValue().split("\n");
+		const start = editor.getCursor("from").line;
+		const end = editor.getCursor("to").line;
+		const cache = this.app.metadataCache.getFileCache(file);
+
+		const links = [...cache?.links ?? [], ...cache?.embeds ?? []];
+
+		if (start != end) {
+			lines = lines.slice(start, end + 1);
 		}
+
+		const myLines = lines.map((line, index) => {
+			const myLine: MyLine = { source: line, formatted: line };
+			links.forEach(e => {
+				if (e.position.start.line != index) return;
+				const start = e.position.start;
+				const end = e.position.end;
+				myLine.formatted = myLine.formatted.replace(line.substring(start.col, end.col), e.displayText);
+			});
+
+			return myLine;
+		});
+		return myLines;
 	}
 
-	setLines(editor: CodeMirror.Editor, lines: string[]) {
+	setLines(lines: MyLine[]) {
+		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+		const editor = view.sourceMode.cmEditor;
+
+		const start = editor.getCursor("from").line;
+		const end = editor.getCursor("to").line;
+
+		const endLineLength = editor.getLine(end).length;
+
 		const selection = editor.getSelection();
 		if (selection != "") {
-			editor.replaceSelection(lines.join("\n"));
+			editor.replaceRange(lines.map(e => e.source).join("\n"), { line: start, ch: 0 }, { line: end, ch: endLineLength });
 		} else {
-			editor.setValue(lines.join("\n"));
+			editor.setValue(lines.map(e => e.source).join("\n"));
 		}
 	}
 }

@@ -82,7 +82,7 @@ export default class MyPlugin extends Plugin {
 
 	getLines(): MyLine[] {
 		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-		const editor = view.sourceMode.cmEditor;
+		const editor = view.editor;
 		if (!editor) return;
 		const file = view.file;
 		let lines = editor.getValue().split("\n");
@@ -113,7 +113,7 @@ export default class MyPlugin extends Plugin {
 
 	setLines(lines: MyLine[]) {
 		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-		const editor = view.sourceMode.cmEditor;
+		const editor = view.editor;
 
 		const start = editor.getCursor("from").line;
 		const end = editor.getCursor("to").line;

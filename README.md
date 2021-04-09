@@ -28,6 +28,12 @@ Custom plugins are only available for Obsidian v0.9.7+.
 ### From GitHub
 1. Download the [latest release](https://github.com/Vinzent03/obsidian-sort-and-permute-lines/releases/latest)
 2. Move `manifest.json` and `main.js` to `<vault>/.obsidian/plugins/obsidian-sort-and-permute-lines`
-3. Reload Obsidian (Str + r)
-4. Go to settings and disable safe mode
-5. Enable `Sort & Permute lines`
+3. Go to settings and disable safe mode
+4. Enable `Sort & Permute lines`
+
+
+> If you want to support me you can consider [buying me a coffee](https://www.buymeacoffee.com/Vinzent03).
+
+<br>
+
+<a href="https://www.buymeacoffee.com/Vinzent03"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=Vinzent03&button_colour=5F7FFF&font_colour=ffffff&font_family=Inter&outline_colour=000000&coffee_colour=FFDD00"></a>

@@ -93,10 +93,6 @@ export default class MyPlugin extends Plugin {
 
 		const links = [...cache?.links ?? [], ...cache?.embeds ?? []];
 
-		if (start != end) {
-			lines = lines.slice(start, end + 1);
-		}
-
 		const myLines = lines.map((line, index) => {
 			const myLine: MyLine = { source: line, formatted: line };
 			links.forEach(e => {
@@ -108,7 +104,11 @@ export default class MyPlugin extends Plugin {
 
 			return myLine;
 		});
-		return myLines;
+		if (start != end) {
+			return myLines.slice(start, end + 1);
+		} else {
+			return myLines;
+		}
 	}
 
 	setLines(lines: MyLine[]) {

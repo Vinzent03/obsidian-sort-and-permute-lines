@@ -82,8 +82,9 @@ export default class MyPlugin extends Plugin {
 
 	getLines(): MyLine[] {
 		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (!view)
+			return;
 		const editor = view.editor;
-		if (!editor) return;
 		const file = view.file;
 		let lines = editor.getValue().split("\n");
 
@@ -91,8 +92,9 @@ export default class MyPlugin extends Plugin {
 		const end = editor.getCursor("to").line;
 		const cache = this.app.metadataCache.getFileCache(file);
 
-		const links = [...cache?.links ?? [], ...cache?.embeds ?? []];
 
+
+		const links = [...cache?.links ?? [], ...cache?.embeds ?? []];
 		const myLines = lines.map((line, index) => {
 			const myLine: MyLine = { source: line, formatted: line };
 			links.forEach(e => {
@@ -106,6 +108,8 @@ export default class MyPlugin extends Plugin {
 		});
 		if (start != end) {
 			return myLines.slice(start, end + 1);
+		} else if (cache.frontmatter) {
+			return myLines.slice(cache.frontmatter.position.end.line + 1);
 		} else {
 			return myLines;
 		}
@@ -113,18 +117,41 @@ export default class MyPlugin extends Plugin {
 
 	setLines(lines: MyLine[]) {
 		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+		const res = this.getPosition(view);
 		const editor = view.editor;
-
-		const start = editor.getCursor("from").line;
-		const end = editor.getCursor("to").line;
-
-		const endLineLength = editor.getLine(end).length;
-
-		const selection = editor.getSelection();
-		if (selection != "") {
-			editor.replaceRange(lines.map(e => e.source).join("\n"), { line: start, ch: 0 }, { line: end, ch: endLineLength });
+		if (res.start != res.end) {
+			editor.replaceRange(lines.map(e => e.source).join("\n"), { line: res.start, ch: 0 }, { line: res.end, ch: res.endLineLength });
 		} else {
 			editor.setValue(lines.map(e => e.source).join("\n"));
+		}
+	}
+
+	getPosition(view: MarkdownView): { start: number; end: number; endLineLength: number; } | undefined {
+		const cache = this.app.metadataCache.getFileCache(view.file);
+		const editor = view.editor;
+
+		const cursorStart = editor.getCursor("from").line;
+		const cursorEnd = editor.getCursor("to").line;
+		const curserEndLineLength = editor.getLine(cursorEnd).length;
+
+		const frontStart = cache.frontmatter?.position?.end?.line + 1;
+		const frontEnd = editor.lastLine();
+		const frontEndLineLength = editor.getLine(frontEnd).length;
+
+		if (cursorStart != cursorEnd) {
+			return {
+				start: cursorStart,
+				end: cursorEnd,
+				endLineLength: curserEndLineLength,
+			};
+		} else if (frontStart) {
+			return {
+				start: frontStart,
+				end: frontEnd,
+				endLineLength: frontEndLineLength,
+			};
+		} else {
+			return;
 		}
 	}
 }

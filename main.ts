@@ -134,7 +134,10 @@ export default class MyPlugin extends Plugin {
 		const cursorEnd = editor.getCursor("to").line;
 		const curserEndLineLength = editor.getLine(cursorEnd).length;
 
-		const frontStart = cache.frontmatter?.position?.end?.line + 1;
+		let frontStart = cache.frontmatter?.position?.end?.line + 1;
+		if (isNaN(frontStart)){
+			frontStart = 0
+		}
 		const frontEnd = editor.lastLine();
 		const frontEndLineLength = editor.getLine(frontEnd).length;
 
@@ -144,14 +147,12 @@ export default class MyPlugin extends Plugin {
 				end: cursorEnd,
 				endLineLength: curserEndLineLength,
 			};
-		} else if (frontStart) {
+		} else {
 			return {
 				start: frontStart,
 				end: frontEnd,
 				endLineLength: frontEndLineLength,
 			};
-		} else {
-			return;
 		}
 	}
 }

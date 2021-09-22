@@ -103,6 +103,9 @@ export default class MyPlugin extends Plugin {
 				const end = e.position.end;
 				myLine.formatted = myLine.formatted.replace(line.substring(start.col, end.col), e.displayText);
 			});
+			if (myLine.formatted.startsWith("- [x]")) {
+				myLine.formatted = myLine.formatted.substring(6);
+			}
 
 			return myLine;
 		});
@@ -135,8 +138,8 @@ export default class MyPlugin extends Plugin {
 		const curserEndLineLength = editor.getLine(cursorEnd).length;
 
 		let frontStart = cache.frontmatter?.position?.end?.line + 1;
-		if (isNaN(frontStart)){
-			frontStart = 0
+		if (isNaN(frontStart)) {
+			frontStart = 0;
 		}
 		const frontEnd = editor.lastLine();
 		const frontEndLineLength = editor.getLine(frontEnd).length;

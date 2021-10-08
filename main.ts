@@ -27,6 +27,11 @@ export default class MyPlugin extends Plugin {
 			callback: (() => this.sortAlphabetically()),
 		});
 		this.addCommand({
+			id: 'sort-list-alphabetically',
+			name: 'Sort current list alphabetically',
+			callback: (() => this.sortAlphabetically(true)),
+		});
+		this.addCommand({
 			id: 'sort-length',
 			name: 'Sort by length of line',
 			callback: (() => this.sortLengthOfLine()),
@@ -49,13 +54,13 @@ export default class MyPlugin extends Plugin {
 	}
 
 
-	sortAlphabetically() {
-		const lines = this.getLines();
+	sortAlphabetically(fromCurrentList: boolean = false) {
+		const lines = this.getLines(fromCurrentList);
 		if (lines.length === 0) return;
 		let sortFunc = (a: MyLine, b: MyLine) => this.compare(a.formatted.trim(), b.formatted.trim());
 
 		lines.sort(sortFunc);
-		this.setLines(lines);
+		this.setLines(lines, fromCurrentList);
 	}
 
 	sortLengthOfLine() {
@@ -80,19 +85,15 @@ export default class MyPlugin extends Plugin {
 		this.setLines(lines);
 	}
 
-	getLines(): MyLine[] {
+	getLines(fromCurrentList: boolean = false): MyLine[] {
 		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 		if (!view)
 			return;
 		const editor = view.editor;
 		const file = view.file;
 		let lines = editor.getValue().split("\n");
-
-		const start = editor.getCursor("from").line;
-		const end = editor.getCursor("to").line;
 		const cache = this.app.metadataCache.getFileCache(file);
-
-
+		const { start, end } = this.getPosition(view, fromCurrentList);
 
 		const links = [...cache?.links ?? [], ...cache?.embeds ?? []];
 		const myLines = lines.map((line, index) => {
@@ -109,18 +110,18 @@ export default class MyPlugin extends Plugin {
 
 			return myLine;
 		});
+		console.log(start, end);
+
 		if (start != end) {
 			return myLines.slice(start, end + 1);
-		} else if (cache.frontmatter) {
-			return myLines.slice(cache.frontmatter.position.end.line + 1);
 		} else {
 			return myLines;
 		}
 	}
 
-	setLines(lines: MyLine[]) {
+	setLines(lines: MyLine[], fromCurrentList: boolean = false) {
 		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-		const res = this.getPosition(view);
+		const res = this.getPosition(view, fromCurrentList);
 		const editor = view.editor;
 		if (res.start != res.end) {
 			editor.replaceRange(lines.map(e => e.source).join("\n"), { line: res.start, ch: 0 }, { line: res.end, ch: res.endLineLength });
@@ -129,18 +130,29 @@ export default class MyPlugin extends Plugin {
 		}
 	}
 
-	getPosition(view: MarkdownView): { start: number; end: number; endLineLength: number; } | undefined {
+	getPosition(view: MarkdownView, fromCurrentList: boolean = false): { start: number; end: number; endLineLength: number; } | undefined {
 		const cache = this.app.metadataCache.getFileCache(view.file);
 		const editor = view.editor;
 
-		const cursorStart = editor.getCursor("from").line;
-		const cursorEnd = editor.getCursor("to").line;
+		let cursorStart = editor.getCursor("from").line;
+		let cursorEnd = editor.getCursor("to").line;
 		const curserEndLineLength = editor.getLine(cursorEnd).length;
+		if (fromCurrentList) {
+			const list = cache.sections.find((e) => {
+				return e.position.start.line <= cursorStart && e.position.end.line >= cursorEnd;
+			});
+			if (list) {
+				cursorStart = list.position.start.line;
+				cursorEnd = list.position.end.line;
+			}
 
+		}
 		let frontStart = cache.frontmatter?.position?.end?.line + 1;
 		if (isNaN(frontStart)) {
 			frontStart = 0;
 		}
+		console.log(frontStart);
+
 		const frontEnd = editor.lastLine();
 		const frontEndLineLength = editor.getLine(frontEnd).length;
 

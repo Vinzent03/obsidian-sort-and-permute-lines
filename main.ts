@@ -110,7 +110,6 @@ export default class MyPlugin extends Plugin {
 
 			return myLine;
 		});
-		console.log(start, end);
 
 		if (start != end) {
 			return myLines.slice(start, end + 1);
@@ -122,6 +121,7 @@ export default class MyPlugin extends Plugin {
 	setLines(lines: MyLine[], fromCurrentList: boolean = false) {
 		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 		const res = this.getPosition(view, fromCurrentList);
+
 		const editor = view.editor;
 		if (res.start != res.end) {
 			editor.replaceRange(lines.map(e => e.source).join("\n"), { line: res.start, ch: 0 }, { line: res.end, ch: res.endLineLength });
@@ -136,7 +136,6 @@ export default class MyPlugin extends Plugin {
 
 		let cursorStart = editor.getCursor("from").line;
 		let cursorEnd = editor.getCursor("to").line;
-		const curserEndLineLength = editor.getLine(cursorEnd).length;
 		if (fromCurrentList) {
 			const list = cache.sections.find((e) => {
 				return e.position.start.line <= cursorStart && e.position.end.line >= cursorEnd;
@@ -147,11 +146,11 @@ export default class MyPlugin extends Plugin {
 			}
 
 		}
+		const curserEndLineLength = editor.getLine(cursorEnd).length;
 		let frontStart = cache.frontmatter?.position?.end?.line + 1;
 		if (isNaN(frontStart)) {
 			frontStart = 0;
 		}
-		console.log(frontStart);
 
 		const frontEnd = editor.lastLine();
 		const frontEndLineLength = editor.getLine(frontEnd).length;

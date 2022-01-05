@@ -22,14 +22,24 @@ export default class MyPlugin extends Plugin {
 		});
 		this.compare = compare;
 		this.addCommand({
+			id: 'sort-alphabetically-with-checkboxes',
+			name: 'Sort alphabetically with checkboxes',
+			callback: (() => this.sortAlphabetically(false, false)),
+		});
+		this.addCommand({
+			id: 'sort-list-alphabetically-with-checkboxes',
+			name: 'Sort current list alphabetically with checkboxes',
+			callback: (() => this.sortAlphabetically(true, false)),
+		});
+		this.addCommand({
 			id: 'sort-alphabetically',
 			name: 'Sort alphabetically',
-			callback: (() => this.sortAlphabetically()),
+			callback: (() => this.sortAlphabetically(false, true)),
 		});
 		this.addCommand({
 			id: 'sort-list-alphabetically',
 			name: 'Sort current list alphabetically',
-			callback: (() => this.sortAlphabetically(true)),
+			callback: (() => this.sortAlphabetically(true, true)),
 		});
 		this.addCommand({
 			id: 'sort-length',
@@ -54,8 +64,8 @@ export default class MyPlugin extends Plugin {
 	}
 
 
-	sortAlphabetically(fromCurrentList: boolean = false) {
-		const lines = this.getLines(fromCurrentList);
+	sortAlphabetically(fromCurrentList = false, ignoreCheckboxes = true) {
+		const lines = this.getLines(fromCurrentList, ignoreCheckboxes);
 		if (lines.length === 0) return;
 		let sortFunc = (a: MyLine, b: MyLine) => this.compare(a.formatted.trim(), b.formatted.trim());
 
@@ -85,7 +95,7 @@ export default class MyPlugin extends Plugin {
 		this.setLines(lines);
 	}
 
-	getLines(fromCurrentList: boolean = false): MyLine[] {
+	getLines(fromCurrentList = false, ignoreCheckboxes = true): MyLine[] {
 		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 		if (!view)
 			return;
@@ -104,8 +114,10 @@ export default class MyPlugin extends Plugin {
 				const end = e.position.end;
 				myLine.formatted = myLine.formatted.replace(line.substring(start.col, end.col), e.displayText);
 			});
-			if (myLine.formatted.startsWith("- [x]")) {
-				myLine.formatted = myLine.formatted.substring(6);
+			if (ignoreCheckboxes) {
+				if (myLine.formatted.startsWith("- [x]")) {
+					myLine.formatted = myLine.formatted.substring(6);
+				}
 			}
 
 			return myLine;

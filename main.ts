@@ -14,7 +14,7 @@ export default class MyPlugin extends Plugin {
 	async onload() {
 		console.log('loading ' + this.manifest.name);
 
-		const { compare } = new Intl.Collator(undefined, {
+		const { compare } = new Intl.Collator(navigator.language, {
 			usage: 'sort',
 			sensitivity: 'base',
 			numeric: true,
@@ -118,6 +118,9 @@ export default class MyPlugin extends Plugin {
 				if (myLine.formatted.startsWith("- [x]")) {
 					myLine.formatted = myLine.formatted.substring(6);
 				}
+			} else {
+				// Just a little bit dirty...
+				myLine.formatted = myLine.formatted.replace("- [x]", "ZZZZZZZZZZZZZZZZZZZZZZZZZ");
 			}
 
 			return myLine;

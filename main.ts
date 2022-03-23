@@ -7,6 +7,15 @@ interface sortMethod {
 interface MyLine {
 	source: string;
 	formatted: string;
+	headingLevel: number | undefined;
+	lineNumber: number;
+}
+
+interface HeadingPart {
+	to: number;
+	title: MyLine;
+	lines: MyLine[];
+	headings: HeadingPart[];
 }
 
 export default class MyPlugin extends Plugin {
@@ -47,6 +56,11 @@ export default class MyPlugin extends Plugin {
 			callback: (() => this.sortLengthOfLine()),
 		});
 		this.addCommand({
+			id: 'sort-headings',
+			name: 'Sort headings',
+			callback: (() => this.sortHeadings()),
+		});
+		this.addCommand({
 			id: 'permute-reverse',
 			name: 'Reverse lines',
 			callback: (() => this.permuteReverse()),
@@ -72,6 +86,68 @@ export default class MyPlugin extends Plugin {
 		lines.sort(sortFunc);
 		this.setLines(lines, fromCurrentList);
 	}
+
+	sortHeadings() {
+		const lines = this.getLines();
+		const res = this.getSortedHeadings(lines, 0, 1);
+		this.setLines(this.headingsToString(res));
+	}
+
+	headingsToString(heading: HeadingPart): MyLine[] {
+		const list = [
+			heading.title,
+			...heading.lines
+		];
+		heading.headings.forEach((e) => list.push(...this.headingsToString(e)));
+		return list;
+	}
+
+	getSortedHeadings(lines: MyLine[], from: number, level: number): HeadingPart {
+		let foundTopHeading = false;
+		let headings: HeadingPart[] = [];
+		let contentLines: MyLine[] = [];
+		let currentIndex = from;
+		let title: MyLine;
+		while (currentIndex < lines.length) {
+			const current = lines[currentIndex];
+			if (foundTopHeading && current.headingLevel <= level) {
+				break;
+			}
+
+			if (current.headingLevel) {
+				//sub headings
+				if (foundTopHeading) {
+
+					headings.push(this.getSortedHeadings(lines, currentIndex, current.headingLevel));
+					currentIndex = headings.last().to;
+
+				} else {
+					foundTopHeading = true;
+					title = current;
+				}
+			} else {
+				contentLines.push(current);
+			}
+
+			currentIndex++;
+		}
+
+		return {
+			lines: contentLines,
+			to: headings.length > 0 ? headings.last().to : (currentIndex - 1),
+			headings: headings.sort((a, b) => {
+				//First sort by heading level then alphabetically
+				const res = a.title.headingLevel - b.title.headingLevel;
+				if (res == 0) {
+					return this.compare(a.title.formatted.trim(), b.title.formatted.trim());
+				} else {
+					return res;
+				}
+			}),
+			title: title,
+		};
+	}
+
 
 	sortLengthOfLine() {
 		const lines = this.getLines();
@@ -105,9 +181,10 @@ export default class MyPlugin extends Plugin {
 		const cache = this.app.metadataCache.getFileCache(file);
 		const { start, end } = this.getPosition(view, fromCurrentList);
 
+		const headings = cache.headings;
 		const links = [...cache?.links ?? [], ...cache?.embeds ?? []];
 		const myLines = lines.map((line, index) => {
-			const myLine: MyLine = { source: line, formatted: line };
+			const myLine: MyLine = { source: line, formatted: line, headingLevel: undefined, lineNumber: index };
 			links.forEach(e => {
 				if (e.position.start.line != index) return;
 				const start = e.position.start;
@@ -125,6 +202,8 @@ export default class MyPlugin extends Plugin {
 
 			return myLine;
 		});
+
+		headings?.map((heading) => myLines[heading.position.start.line].headingLevel = heading.level);
 
 		if (start != end) {
 			return myLines.slice(start, end + 1);

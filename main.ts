@@ -89,8 +89,8 @@ export default class MyPlugin extends Plugin {
 
 	sortHeadings() {
 		const lines = this.getLines();
-		const res = this.getSortedHeadings(lines, 0, 1);
-		this.setLines(this.headingsToString(res));
+		const res = this.getSortedHeadings(lines, 0, { headingLevel: 0, formatted: "", source: "", lineNumber: -1 });
+		this.setLines(this.headingsToString(res).slice(1));
 	}
 
 	headingsToString(heading: HeadingPart): MyLine[] {
@@ -102,29 +102,23 @@ export default class MyPlugin extends Plugin {
 		return list;
 	}
 
-	getSortedHeadings(lines: MyLine[], from: number, level: number): HeadingPart {
-		let foundTopHeading = false;
+	getSortedHeadings(lines: MyLine[], from: number, heading: MyLine): HeadingPart {
 		let headings: HeadingPart[] = [];
 		let contentLines: MyLine[] = [];
 		let currentIndex = from;
-		let title: MyLine;
 		while (currentIndex < lines.length) {
 			const current = lines[currentIndex];
-			if (foundTopHeading && current.headingLevel <= level) {
+			if (current.headingLevel <= heading.headingLevel) {
 				break;
 			}
 
 			if (current.headingLevel) {
-				//sub headings
-				if (foundTopHeading) {
 
-					headings.push(this.getSortedHeadings(lines, currentIndex, current.headingLevel));
-					currentIndex = headings.last().to;
 
-				} else {
-					foundTopHeading = true;
-					title = current;
-				}
+				headings.push(this.getSortedHeadings(lines, currentIndex + 1, current));
+				currentIndex = headings.last().to;
+
+
 			} else {
 				contentLines.push(current);
 			}
@@ -144,7 +138,7 @@ export default class MyPlugin extends Plugin {
 					return res;
 				}
 			}),
-			title: title,
+			title: heading,
 		};
 	}
 

@@ -5,6 +5,7 @@
 - Sort by length of line
 - Reverse line order
 - Shuffle line order
+- Sort headings while preserving parents
 
 ## How to use
 You can either just call a command and the whole file will be changed, or select text and just change that range.

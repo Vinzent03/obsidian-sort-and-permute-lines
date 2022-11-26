@@ -1,4 +1,4 @@
-import { MarkdownView, Plugin } from 'obsidian';
+import { ListItemCache, MarkdownView, Plugin } from 'obsidian';
 
 interface sortMethod {
 	(x: string, y: string): number;
@@ -16,6 +16,12 @@ interface HeadingPart {
 	title: MyLine;
 	lines: MyLine[];
 	headings: HeadingPart[];
+}
+
+interface ListPart {
+	children: ListPart[];
+	title: MyLine;
+	lastLine: number;
 }
 
 export default class MyPlugin extends Plugin {
@@ -70,6 +76,16 @@ export default class MyPlugin extends Plugin {
 			name: 'Shuffle lines',
 			callback: (() => this.permuteShuffle()),
 		});
+		this.addCommand({
+			id: 'sort-list-recursively',
+			name: 'Sort current list recursively',
+			callback: (() => this.sortListRecursively(true)),
+		});
+		this.addCommand({
+			id: 'sort-list-recursively-with-checkboxes',
+			name: 'Sort current list recursively with checkboxes',
+			callback: (() => this.sortListRecursively(false)),
+		});
 
 	}
 
@@ -85,6 +101,62 @@ export default class MyPlugin extends Plugin {
 
 		lines.sort(sortFunc);
 		this.setLines(lines, fromCurrentList);
+	}
+
+	sortListRecursively(ignoreCheckboxes: boolean) {
+		const inputLines = this.getLines(true, ignoreCheckboxes);
+
+		if (inputLines.length === 0 || inputLines.find(line => line.source.trim() == "")) return;
+		const firstLineNumber = inputLines.first().lineNumber;
+		const lines = [...new Array(firstLineNumber).fill(undefined), ...inputLines];
+		let index = firstLineNumber;
+
+		const cache = this.app.metadataCache.getFileCache(this.app.workspace.getActiveFile());
+		const children: ListPart[] = [];
+
+		while (index < lines.length) {
+			const newChild = this.getSortedListParts(lines, cache.listItems, index);
+			children.push(newChild);
+			index = newChild.lastLine;
+
+			index++;
+		}
+		children.sort((a, b) => this.compare(a.title.formatted.trim(), b.title.formatted.trim()));
+
+		const res = children.reduce((acc, cur) => acc.concat(this.listPartToList(cur)), []);
+		this.setLines(res, true);
+	}
+
+	getLineCacheFromLine(line: number, linesCache: ListItemCache[]): ListItemCache | undefined {
+		return linesCache.find(cacheItem => cacheItem.position.start.line === line);
+	}
+
+	getSortedListParts(lines: MyLine[], linesCache: ListItemCache[], index: number): ListPart {
+		const children: ListPart[] = [];
+		const startListCache = this.getLineCacheFromLine(index, linesCache);
+
+		const title = lines[index];
+
+		while (startListCache.parent < this.getLineCacheFromLine(index + 1, linesCache)?.parent || (startListCache.parent < 0 && this.getLineCacheFromLine(index + 1, linesCache)?.parent >= 0)) {
+			index++;
+
+			const newChild = this.getSortedListParts(lines, linesCache, index);
+
+			index = newChild.lastLine ?? index;
+			children.push(newChild);
+		};
+		const lastLine = children.last()?.lastLine ?? index;
+
+		children.sort((a, b) => this.compare(a.title.formatted.trim(), b.title.formatted.trim()));
+		return {
+			children: children,
+			title: title,
+			lastLine: lastLine,
+		};
+	}
+
+	listPartToList(list: ListPart): MyLine[] {
+		return list.children.reduce((acc, cur) => acc.concat(this.listPartToList(cur)), [list.title]);
 	}
 
 	sortHeadings() {
@@ -186,8 +258,8 @@ export default class MyPlugin extends Plugin {
 				myLine.formatted = myLine.formatted.replace(line.substring(start.col, end.col), e.displayText);
 			});
 			if (ignoreCheckboxes) {
-				if (myLine.formatted.startsWith("- [x]")) {
-					myLine.formatted = myLine.formatted.substring(6);
+				if (myLine.formatted.trimLeft().startsWith("- [x]")) {
+					myLine.formatted = myLine.formatted.replace("- [x]", "");
 				}
 			} else {
 				// Just a little bit dirty...

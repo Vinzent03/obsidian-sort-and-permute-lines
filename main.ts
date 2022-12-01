@@ -257,13 +257,14 @@ export default class MyPlugin extends Plugin {
 				const end = e.position.end;
 				myLine.formatted = myLine.formatted.replace(line.substring(start.col, end.col), e.displayText);
 			});
+
+			// Regex of all the supported alternate checkbox styles
+			const cbRe = /^- \[[ x\/\-><?!*\"lbiSpcfkwud]\]/gi;
 			if (ignoreCheckboxes) {
-				if (myLine.formatted.trimLeft().startsWith("- [x]")) {
-					myLine.formatted = myLine.formatted.replace("- [x]", "");
-				}
+				myLine.formatted = myLine.formatted.replace(cbRe, "");
 			} else {
 				// Just a little bit dirty...
-				myLine.formatted = myLine.formatted.replace("- [x]", "ZZZZZZZZZZZZZZZZZZZZZZZZZ");
+				myLine.formatted = myLine.formatted.replace(cbRe, "ZZZZZZZZZZZZZZZZZZZZZZZZZ");
 			}
 
 			return myLine;

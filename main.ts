@@ -259,12 +259,12 @@ export default class MyPlugin extends Plugin {
 			});
 
 			// Regex of all the supported alternate checkbox styles
-			const cbRe = /^- \[[ x\/\-><?!*\"lbiSpcfkwud]\]/gi;
+			const cbRe = /^(\s*)- \[.\]/gi;
 			if (ignoreCheckboxes) {
-				myLine.formatted = myLine.formatted.replace(cbRe, "");
+				myLine.formatted = myLine.formatted.replace(cbRe, "$1");
 			} else {
 				// Just a little bit dirty...
-				myLine.formatted = myLine.formatted.replace(cbRe, "ZZZZZZZZZZZZZZZZZZZZZZZZZ");
+				myLine.formatted = myLine.formatted.replace(cbRe, "$1ZZZZZZZZZZZZZZZZZZZZZZZZZ");
 			}
 
 			return myLine;

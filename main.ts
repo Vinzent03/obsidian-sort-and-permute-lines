@@ -258,8 +258,8 @@ export default class MyPlugin extends Plugin {
 				myLine.formatted = myLine.formatted.replace(line.substring(start.col, end.col), e.displayText);
 			});
 
-			// Regex of all the supported alternate checkbox styles
-			const cbRe = /^(\s*)- \[.\]/gi;
+			// Regex of cehckbox styles
+			const cbRe = /^(\s*)- \[[^ ]\]/gi;
 			if (ignoreCheckboxes) {
 				myLine.formatted = myLine.formatted.replace(cbRe, "$1");
 			} else {

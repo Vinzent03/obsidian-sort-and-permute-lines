@@ -257,13 +257,14 @@ export default class MyPlugin extends Plugin {
 				const end = e.position.end;
 				myLine.formatted = myLine.formatted.replace(line.substring(start.col, end.col), e.displayText);
 			});
+
+			// Regex of cehckbox styles
+			const cbRe = /^(\s*)- \[[^ ]\]/gi;
 			if (ignoreCheckboxes) {
-				if (myLine.formatted.trimLeft().startsWith("- [x]")) {
-					myLine.formatted = myLine.formatted.replace("- [x]", "");
-				}
+				myLine.formatted = myLine.formatted.replace(cbRe, "$1");
 			} else {
 				// Just a little bit dirty...
-				myLine.formatted = myLine.formatted.replace("- [x]", "ZZZZZZZZZZZZZZZZZZZZZZZZZ");
+				myLine.formatted = myLine.formatted.replace(cbRe, "$1ZZZZZZZZZZZZZZZZZZZZZZZZZ");
 			}
 
 			return myLine;

@@ -23,6 +23,7 @@ interface ListPart {
 	title: MyLine;
 	lastLine: number;
 }
+const checkboxRegex = /^(\s*)- \[[^ ]\]/gi;
 
 export default class MyPlugin extends Plugin {
 	compare: sortMethod;
@@ -57,6 +58,15 @@ export default class MyPlugin extends Plugin {
 			callback: (() => this.sortAlphabetically(true, true)),
 		});
 		this.addCommand({
+			id: 'sort-checkboxes',
+			name: 'Sort current list by checkboxes',
+			callback: () => this.sortListRecursively(true, (a: ListPart, b: ListPart) => {
+				if (checkboxRegex.test(a.title.source) && !checkboxRegex.test(b.title.source)) return 1;
+				if (!checkboxRegex.test(a.title.source) && checkboxRegex.test(b.title.source)) return -1;
+				return 0;
+			}),
+		});
+		this.addCommand({
 			id: 'sort-length',
 			name: 'Sort by length of line',
 			callback: (() => this.sortLengthOfLine()),
@@ -76,15 +86,17 @@ export default class MyPlugin extends Plugin {
 			name: 'Shuffle lines',
 			callback: (() => this.permuteShuffle()),
 		});
+
+		const comp = (a: ListPart, b: ListPart) => this.compare(a.title.formatted.trim(), b.title.formatted.trim());
 		this.addCommand({
 			id: 'sort-list-recursively',
 			name: 'Sort current list recursively',
-			callback: (() => this.sortListRecursively(true)),
+			callback: (() => this.sortListRecursively(true, comp)),
 		});
 		this.addCommand({
 			id: 'sort-list-recursively-with-checkboxes',
 			name: 'Sort current list recursively with checkboxes',
-			callback: (() => this.sortListRecursively(false)),
+			callback: (() => this.sortListRecursively(false, comp)),
 		});
 
 	}
@@ -103,7 +115,7 @@ export default class MyPlugin extends Plugin {
 		this.setLines(lines, fromCurrentList);
 	}
 
-	sortListRecursively(ignoreCheckboxes: boolean) {
+	sortListRecursively(ignoreCheckboxes: boolean, compareFn: (a: ListPart, b: ListPart) => number) {
 		const inputLines = this.getLines(true, ignoreCheckboxes);
 
 		if (inputLines.length === 0 || inputLines.find(line => line.source.trim() == "")) return;
@@ -115,13 +127,13 @@ export default class MyPlugin extends Plugin {
 		const children: ListPart[] = [];
 
 		while (index < lines.length) {
-			const newChild = this.getSortedListParts(lines, cache.listItems, index);
+			const newChild = this.getSortedListParts(lines, cache.listItems, index, compareFn);
 			children.push(newChild);
 			index = newChild.lastLine;
 
 			index++;
 		}
-		children.sort((a, b) => this.compare(a.title.formatted.trim(), b.title.formatted.trim()));
+		children.sort(compareFn);
 
 		const res = children.reduce((acc, cur) => acc.concat(this.listPartToList(cur)), []);
 		this.setLines(res, true);
@@ -131,7 +143,7 @@ export default class MyPlugin extends Plugin {
 		return linesCache.find(cacheItem => cacheItem.position.start.line === line);
 	}
 
-	getSortedListParts(lines: MyLine[], linesCache: ListItemCache[], index: number): ListPart {
+	getSortedListParts(lines: MyLine[], linesCache: ListItemCache[], index: number, compareFn: (a: ListPart, b: ListPart) => number): ListPart {
 		const children: ListPart[] = [];
 		const startListCache = this.getLineCacheFromLine(index, linesCache);
 
@@ -140,14 +152,14 @@ export default class MyPlugin extends Plugin {
 		while (startListCache.parent < this.getLineCacheFromLine(index + 1, linesCache)?.parent || (startListCache.parent < 0 && this.getLineCacheFromLine(index + 1, linesCache)?.parent >= 0)) {
 			index++;
 
-			const newChild = this.getSortedListParts(lines, linesCache, index);
+			const newChild = this.getSortedListParts(lines, linesCache, index, compareFn);
 
 			index = newChild.lastLine ?? index;
 			children.push(newChild);
 		};
 		const lastLine = children.last()?.lastLine ?? index;
 
-		children.sort((a, b) => this.compare(a.title.formatted.trim(), b.title.formatted.trim()));
+		children.sort(compareFn);
 		return {
 			children: children,
 			title: title,
@@ -259,12 +271,11 @@ export default class MyPlugin extends Plugin {
 			});
 
 			// Regex of cehckbox styles
-			const cbRe = /^(\s*)- \[[^ ]\]/gi;
 			if (ignoreCheckboxes) {
-				myLine.formatted = myLine.formatted.replace(cbRe, "$1");
+				myLine.formatted = myLine.formatted.replace(checkboxRegex, "$1");
 			} else {
 				// Just a little bit dirty...
-				myLine.formatted = myLine.formatted.replace(cbRe, "$1ZZZZZZZZZZZZZZZZZZZZZZZZZ");
+				myLine.formatted = myLine.formatted.replace(checkboxRegex, "$1ZZZZZZZZZZZZZZZZZZZZZZZZZ");
 			}
 
 			return myLine;

@@ -267,10 +267,22 @@ export default class MyPlugin extends Plugin {
 				if (e.position.start.line != index) return;
 				const start = e.position.start;
 				const end = e.position.end;
-				myLine.formatted = myLine.formatted.replace(line.substring(start.col, end.col), e.displayText);
+				if (e.displayText)   // wiki link has displayText, but markdown link has no
+					myLine.formatted = myLine.formatted.replace(line.substring(start.col, end.col), e.displayText);
 			});
 
-			// Regex of cehckbox styles
+			// handle markdown link: [title](path)
+			if(ignoreCheckboxes) {  // TODO: Compatible with checkbox style
+				const linkRegex = /\[.*?\]\(.*?\)/gi;
+				const linkStrs = myLine.formatted.match(linkRegex);
+				linkStrs?.forEach(linkStr => {
+					const linkTitleRegex = /\[.*?\]/gi;
+					const linkTitle = linkStr.match(linkTitleRegex)[0].slice(1, -1);
+					myLine.formatted = myLine.formatted.replace(linkStr, linkTitle);
+				});
+			}
+
+			// Regex of checkbox styles
 			if (ignoreCheckboxes) {
 				myLine.formatted = myLine.formatted.replace(checkboxRegex, "$1");
 			} else {

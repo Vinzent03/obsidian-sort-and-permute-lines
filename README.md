@@ -8,7 +8,7 @@
 - Sort headings while preserving parents
 
 ## How to use
-You can either just call a command and the whole file will be changed, or select text and just change that range.
+You can either just call a command (via `Ctrl + P` (or `Cmd + P` on macOS)) and the whole file will be changed, or select text and then call a command to just change that range.
 
 ![Demo](https://raw.githubusercontent.com/Vinzent03/obsidian-sort-and-permute-lines/master/assets/example.gif)
 

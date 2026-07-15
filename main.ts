@@ -28,13 +28,13 @@ const checkboxRegex = /^(\s*)- \[[^ ]\]/gi;
 export default class SortAndPermuteLinesPlugin extends Plugin {
   compare: sortMethod;
   async onload() {
-    const { compare } = new Intl.Collator(navigator.language, {
+    const collator = new Intl.Collator(navigator.language, {
       usage: "sort",
       sensitivity: "base",
       numeric: true,
       ignorePunctuation: true,
     });
-    this.compare = compare;
+    this.compare = collator.compare.bind(collator);
     this.addCommand({
       id: "sort-alphabetically-with-checkboxes",
       name: "Sort alphabetically with checkboxes",

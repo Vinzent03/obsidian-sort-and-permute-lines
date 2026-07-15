@@ -1,8 +1,8 @@
 {
   "id": "obsidian-sort-and-permute-lines",
-  "name": "Sort & Permute lines",
+  "name": "Sort and Permute lines",
   "version": "0.7.0",
-  "description": "",
+  "description": "Sort lines alphabetically, by length, reverse their order, or shuffle them. Sort headings while preserving parent hierarchy and apply changes to the whole file or a selected range.",
   "author": "Vinzent",
   "authorUrl": "https://github.com/Vinzent03",
   "fundingUrl": "https://ko-fi.com/vinzent",

@@ -28,8 +28,6 @@ const checkboxRegex = /^(\s*)- \[[^ ]\]/gi;
 export default class SortAndPermuteLinesPlugin extends Plugin {
   compare: sortMethod;
   async onload() {
-    console.log("loading " + this.manifest.name);
-
     const { compare } = new Intl.Collator(navigator.language, {
       usage: "sort",
       sensitivity: "base",
@@ -110,9 +108,7 @@ export default class SortAndPermuteLinesPlugin extends Plugin {
     });
   }
 
-  onunload() {
-    console.log("unloading " + this.manifest.name);
-  }
+  onunload() {}
 
   sortAlphabetically(fromCurrentList = false, ignoreCheckboxes = true) {
     const lines = this.getLines(fromCurrentList, ignoreCheckboxes);
@@ -420,4 +416,3 @@ export default class SortAndPermuteLinesPlugin extends Plugin {
     }
   }
 }
-

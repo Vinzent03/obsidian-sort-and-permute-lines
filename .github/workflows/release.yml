@@ -19,6 +19,9 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 24
+      - uses: pnpm/action-setup@v6
+        with:
+          version: latest
 
       - name: Build plugin
         run: |
@@ -47,4 +50,3 @@ jobs:
             --title="$tag" \
             --draft \
             main.js manifest.json ${{ steps.styles.outputs.exists == 'true' && 'styles.css' || '' }}
-

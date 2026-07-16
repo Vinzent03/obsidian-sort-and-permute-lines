@@ -321,12 +321,12 @@ export default class SortAndPermuteLinesPlugin extends Plugin {
 
   getLines(fromCurrentList = false, ignoreCheckboxes = true): MyLine[] {
     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-    if (!view) return;
+    if (!view) return [];
     const editor = view.editor;
     const file = view.file;
     let lines = editor.getValue().split("\n");
     const cache = this.app.metadataCache.getFileCache(file);
-    const { start, end } = this.getPosition(view, fromCurrentList);
+    const { start, end } = this.getRangeToOperate(view, fromCurrentList);
 
     const headings = cache.headings;
     const links = [...(cache?.links ?? []), ...(cache?.embeds ?? [])];
@@ -375,7 +375,7 @@ export default class SortAndPermuteLinesPlugin extends Plugin {
 
   setLines(lines: MyLine[], fromCurrentList: boolean = false) {
     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-    const res = this.getPosition(view, fromCurrentList);
+    const res = this.getRangeToOperate(view, fromCurrentList);
 
     const editor = view.editor;
     if (res.start != res.end) {
@@ -389,7 +389,10 @@ export default class SortAndPermuteLinesPlugin extends Plugin {
     }
   }
 
-  getPosition(
+  /**
+   * @returns the range of lines to operate on, based on the current selection and whether to operate on the current list or the entire document.
+   */
+  getRangeToOperate(
     view: MarkdownView,
     fromCurrentList: boolean = false,
   ): { start: number; end: number; endLineLength: number } | undefined {
@@ -411,7 +414,7 @@ export default class SortAndPermuteLinesPlugin extends Plugin {
       }
     }
     const curserEndLineLength = editor.getLine(cursorEnd).length;
-    let frontStart = cache.frontmatter?.position?.end?.line + 1;
+    let frontStart = cache.frontmatterPosition?.end?.line + 1;
     if (isNaN(frontStart)) {
       frontStart = 0;
     }

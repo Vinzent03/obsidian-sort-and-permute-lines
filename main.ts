@@ -84,6 +84,11 @@ export default class SortAndPermuteLinesPlugin extends Plugin {
       callback: () => this.sortHeadings(),
     });
     this.addCommand({
+      id: "sort-headings-reverse",
+      name: "Sort headings in reverse",
+      callback: () => this.sortHeadingsReverse(),
+    });
+    this.addCommand({
       id: "permute-reverse",
       name: "Reverse lines",
       callback: () => this.permuteReverse(),
@@ -230,6 +235,17 @@ export default class SortAndPermuteLinesPlugin extends Plugin {
     this.setLines(this.headingsToString(res).slice(1));
   }
 
+  sortHeadingsReverse() {
+    const lines = this.getLines();
+    const res = this.getSortedHeadings(
+      lines,
+      0,
+      { headingLevel: 0, formatted: "", source: "", lineNumber: -1 },
+      true,
+    );
+    this.setLines(this.headingsToString(res).slice(1));
+  }
+
   headingsToString(heading: HeadingPart): MyLine[] {
     const list = [heading.title, ...heading.lines];
     heading.headings.forEach((e) => list.push(...this.headingsToString(e)));
@@ -240,6 +256,7 @@ export default class SortAndPermuteLinesPlugin extends Plugin {
     lines: MyLine[],
     from: number,
     heading: MyLine,
+    reverseDirection: boolean = false,
   ): HeadingPart {
     let headings: HeadingPart[] = [];
     let contentLines: MyLine[] = [];
@@ -267,10 +284,11 @@ export default class SortAndPermuteLinesPlugin extends Plugin {
         //First sort by heading level then alphabetically
         const res = a.title.headingLevel - b.title.headingLevel;
         if (res == 0) {
-          return this.compare(
+          const cmp = this.compare(
             a.title.formatted.trim(),
             b.title.formatted.trim(),
           );
+          return reverseDirection ? -cmp : cmp;
         } else {
           return res;
         }

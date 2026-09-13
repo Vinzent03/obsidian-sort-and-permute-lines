@@ -6,6 +6,7 @@
 - Sort by length of line
 - Reverse line order
 - Shuffle line order
+- Remove duplicate lines
 - Sort headings while preserving parents
 
 ## How to use

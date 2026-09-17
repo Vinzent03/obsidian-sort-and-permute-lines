@@ -25,6 +25,19 @@ interface ListPart {
 }
 const checkboxRegex = /^(\s*)- \[[^ ]\]/gi;
 
+/**
+ * Removes duplicate lines by exact source text, keeping the first occurrence
+ * and preserving the original order.
+ */
+export function uniqueLines(lines: MyLine[]): MyLine[] {
+  const seen = new Set<string>();
+  return lines.filter((line) => {
+    if (seen.has(line.source)) return false;
+    seen.add(line.source);
+    return true;
+  });
+}
+
 export default class SortAndPermuteLinesPlugin extends Plugin {
   compare: sortMethod;
   async onload() {
@@ -97,6 +110,11 @@ export default class SortAndPermuteLinesPlugin extends Plugin {
       id: "permute-shuffle",
       name: "Shuffle lines",
       callback: () => this.permuteShuffle(),
+    });
+    this.addCommand({
+      id: "permute-unique",
+      name: "Remove duplicate lines",
+      callback: () => this.permuteUnique(),
     });
 
     const comp = (a: ListPart, b: ListPart) =>
@@ -317,6 +335,12 @@ export default class SortAndPermuteLinesPlugin extends Plugin {
     if (lines.length === 0) return;
     lines.shuffle();
     this.setLines(lines);
+  }
+
+  permuteUnique() {
+    const lines = this.getLines();
+    if (lines.length === 0) return;
+    this.setLines(uniqueLines(lines));
   }
 
   getLines(fromCurrentList = false, ignoreCheckboxes = true): MyLine[] {
